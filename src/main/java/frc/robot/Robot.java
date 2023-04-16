@@ -4,10 +4,15 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PneumaticHub;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -18,6 +23,7 @@ import edu.wpi.first.wpilibj.Timer;
 public class Robot extends TimedRobot {
   private final ArmRotationSubsystem m_armRotationSubsystem = new ArmRotationSubsystem();
   private final ArmExtensionSubsystem m_armExtensionSubsystem = new ArmExtensionSubsystem();
+  private final CANSparkMax m_appleMotor = new CANSparkMax(9, MotorType.kBrushless);
   private final DigitalInput m_atTopSwitch = new DigitalInput(5);
   private final DigitalInput m_atBottomSwitch = new DigitalInput(6);
   private final PneumaticHub m_pneumatics = new PneumaticHub();
@@ -35,6 +41,12 @@ public class Robot extends TimedRobot {
 
   private FloatMovementStates m_curretState = FloatMovementStates.Unknown;
   private boolean m_paradeMovement = false;
+  private double m_appleSpeed = 0.5;
+  private double m_pickAppleRotation = 150;
+  private double m_pickAppleExtension = 25;
+  private double m_deliverAppleRotation = 60;
+  private double m_deliverAppleExtension = 0;
+  private double m_afterSwitchesDelay = 2;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -44,6 +56,16 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     // turn off compressor
     m_pneumatics.disableCompressor();
+
+    m_appleMotor.restoreFactoryDefaults();
+    m_appleMotor.setIdleMode(IdleMode.kBrake);
+
+    SmartDashboard.putNumber("Apple Speed", 0.5);
+    SmartDashboard.putNumber("Pick Apple Rotation", 150);
+    SmartDashboard.putNumber("Pick Apple Extension", 25);
+    SmartDashboard.putNumber("Deliver Apple Rotation", 60);
+    SmartDashboard.putNumber("Deliver Apple Extension", 0);
+    SmartDashboard.putNumber("After Switches Delay", 2);
   }
 
   /**
@@ -56,16 +78,6 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {}
 
-  /**
-   * This autonomous (along with the chooser code above) shows how to select between different
-   * autonomous modes using the dashboard. The sendable chooser code works with the Java
-   * SmartDashboard. If you prefer the LabVIEW Dashboard, remove all of the chooser code and
-   * uncomment the getString line to get the auto name from the text box below the Gyro
-   *
-   * <p>You can add additional auto modes by adding additional comparisons to the switch structure
-   * below with additional strings. If using the SendableChooser make sure to add them to the
-   * chooser code above as well.
-   */
   @Override
   public void autonomousInit() {
   }
@@ -102,44 +114,49 @@ public class Robot extends TimedRobot {
 
   private void NextMovemementState()
   {
+    // BE CAREFUL - doing rotation and extension simultaneously right now!!!!
     switch (m_curretState)
     {
       case StartLowering:
         // start arm and extension movement
-        m_armExtensionSubsystem.setArmExtensionPosition(0);
-        m_armRotationSubsystem.setArmDegrees(60);
+        m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
+        m_armRotationSubsystem.setArmDegrees(m_deliverAppleRotation);
         // start apple movement
+        m_appleMotor.set(m_appleSpeed);
         m_curretState = FloatMovementStates.WaitForDownSwitch;
         break;
       case WaitForDownSwitch:
         if (m_atBottomSwitch.get())
         {
+          m_appleMotor.set(0);
           m_curretState = FloatMovementStates.DelayAtDownSwitch;
           m_delayTimer.reset();
           m_delayTimer.start();
         }
         break;
       case DelayAtDownSwitch:
-        if (m_delayTimer.hasElapsed(2))
+        if (m_delayTimer.hasElapsed(m_afterSwitchesDelay))
         {
           m_curretState = FloatMovementStates.StartRaising;
         }
         break;
       case StartRaising:
-        m_armExtensionSubsystem.setArmExtensionPosition(150);
-        m_armRotationSubsystem.setArmDegrees(25);
+        m_armRotationSubsystem.setArmDegrees(m_pickAppleRotation);
+        m_armExtensionSubsystem.setArmExtensionPosition(m_pickAppleExtension);
+        m_appleMotor.set(-m_appleSpeed);
         m_curretState = FloatMovementStates.WaitForUpSwitch;
         break;
       case WaitForUpSwitch:
         if (m_atTopSwitch.get())
         {
+          m_appleMotor.set(0);
           m_curretState = FloatMovementStates.DelayAtTopSwitch;
           m_delayTimer.reset();
           m_delayTimer.start();
         }
         break;
       case DelayAtTopSwitch:
-        if (m_delayTimer.hasElapsed(2))
+        if (m_delayTimer.hasElapsed(m_afterSwitchesDelay))
         {
           m_curretState = FloatMovementStates.StartLowering;
         }
@@ -155,7 +172,14 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    m_appleSpeed = SmartDashboard.getNumber("Apple Speed", 0.5);
+    m_pickAppleRotation = SmartDashboard.getNumber("Pick Apple Rotation", 150);
+    m_pickAppleExtension = SmartDashboard.getNumber("Pick Apple Extension", 25);
+    m_deliverAppleRotation = SmartDashboard.getNumber("Deliver Apple Rotation", 60);
+    m_deliverAppleExtension = SmartDashboard.getNumber("Deliver Apple Extension", 0);
+    m_afterSwitchesDelay = SmartDashboard.getNumber("After Switches Delay", 2);
+  }
 
   /** This function is called once when test mode is enabled. */
   @Override
