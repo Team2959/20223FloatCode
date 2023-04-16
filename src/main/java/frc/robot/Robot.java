@@ -66,6 +66,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Deliver Apple Rotation", 60);
     SmartDashboard.putNumber("Deliver Apple Extension", 0);
     SmartDashboard.putNumber("After Switches Delay", 2);
+    SmartDashboard.putBoolean("Run Float Program", false);
   }
 
   /**
@@ -96,15 +97,24 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    var runProgram = SmartDashboard.putBoolean("Run Float Program", false);
     // get start/stop from joystick buttons or dashboard
-    // if (stop)
-    // {
-    //   m_paradeMovement = false;
-    // }
-    // else if (startCompetition)
-    // {
-    //   m_paradeMovement = true;
-    // }
+    if (runProgram == false)
+    {
+      if (m_paradeMovement)
+      {
+        m_paradeMovement = false;
+        m_appleMotor.set(0);
+        m_armRotationSubsystem.setArmDegrees(m_armRotationSubsystem.getArmAngle());
+        m_armExtensionSubsystem.setArmExtensionPosition(m_armExtensionSubsystem.getArmExtensionPosition());
+        m_curretState = FloatMovementStates.Unknown;
+      }
+    }
+    else if (m_paradeMovement == false)
+    {
+      m_paradeMovement = true;
+      m_curretState = FloatMovementStates.StartRaising;
+    }
 
     if (m_paradeMovement)
     {
@@ -122,7 +132,7 @@ public class Robot extends TimedRobot {
         m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
         m_armRotationSubsystem.setArmDegrees(m_deliverAppleRotation);
         // start apple movement
-        m_appleMotor.set(m_appleSpeed);
+        m_appleMotor.set(-m_appleSpeed);
         m_curretState = FloatMovementStates.WaitForDownSwitch;
         break;
       case WaitForDownSwitch:
@@ -143,7 +153,7 @@ public class Robot extends TimedRobot {
       case StartRaising:
         m_armRotationSubsystem.setArmDegrees(m_pickAppleRotation);
         m_armExtensionSubsystem.setArmExtensionPosition(m_pickAppleExtension);
-        m_appleMotor.set(-m_appleSpeed);
+        m_appleMotor.set(m_appleSpeed);
         m_curretState = FloatMovementStates.WaitForUpSwitch;
         break;
       case WaitForUpSwitch:
