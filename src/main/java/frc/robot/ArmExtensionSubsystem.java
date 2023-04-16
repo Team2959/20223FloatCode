@@ -14,16 +14,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ArmExtensionSubsystem extends SubsystemBase {
-    private static final int kSmartMaxVel = 10000;
-    private static final int kSmartMaxAccel = 10000;
-    // private static final double kArmExtensionP = 0.02;  // orig kP from St Joe: 0.02
-    // private static final double kArmExtensionI = 0;  // orig KI from St Joe: 0
     private static final double kArmExtensionP = 0.15; // POSTION: 0.15 //0.00035; //CF 0.00035 ALUM: 0.000075
     private static final double kArmExtensionI = 0; //0.000001;
     private static final double kArmExtensionD = 0;
     private static final double kArmExtensionFF = 0;
     private static final double kArmExtensionIzone = 0;
-    // private static final double kSmartAllowedError = 0;
 
     private CANSparkMax m_armExtensionMotor = new CANSparkMax(8, MotorType.kBrushless);
     private SparkMaxRelativeEncoder m_extensionEncoder;
@@ -44,13 +39,6 @@ public class ArmExtensionSubsystem extends SubsystemBase {
         m_armExtensionMotorPidController.setD(kArmExtensionD);
         m_armExtensionMotorPidController.setFF(kArmExtensionFF);
         m_armExtensionMotorPidController.setIZone(kArmExtensionIzone);
-        // https://github.com/REVrobotics/SPARK-MAX-Examples/blob/master/Java/Smart%20Motion%20Example/src/main/java/frc/robot/Robot.java
-        m_armExtensionMotorPidController.setSmartMotionMaxAccel(kSmartMaxAccel, 0);
-        m_armExtensionMotorPidController.setSmartMotionMaxVelocity(kSmartMaxVel, 0);
-        
-        // TODO: try this out, but we don't want it on yet as it could hurt tuning
-        // m_armExtensionMotorPidController.setSmartMotionAllowedClosedLoopError(kSmartAllowedError, 0);
-        
     }
 
     @Override
@@ -63,7 +51,6 @@ public class ArmExtensionSubsystem extends SubsystemBase {
     }
 
     public void setArmExtensionPosition(double distance) {
-        // m_armExtensionMotorPidController.setReference(distance, CANSparkMax.ControlType.kSmartMotion);
         m_armExtensionMotorPidController.setReference(distance, CANSparkMax.ControlType.kPosition);
 
         m_lastArmExtensionTarget = distance;
@@ -82,17 +69,11 @@ public class ArmExtensionSubsystem extends SubsystemBase {
     }
 
     public void smartDashboardInit() {
-        SmartDashboard.putBoolean(getName() + "/Arm Extension Prof Const Enable", false);
-
         SmartDashboard.putNumber(getName() + "/Arm Extension P", m_armExtensionMotorPidController.getP());
         SmartDashboard.putNumber(getName() + "/Arm Extension I", m_armExtensionMotorPidController.getI());
         SmartDashboard.putNumber(getName() + "/Arm Extension D", m_armExtensionMotorPidController.getD());
         SmartDashboard.putNumber(getName() + "/Arm Extension FF", m_armExtensionMotorPidController.getFF());
         SmartDashboard.putNumber(getName() + "/Arm Extension Izone", m_armExtensionMotorPidController.getIZone());
-
-        SmartDashboard.putNumber(getName() + "/Arm Extension Max Accel", kSmartMaxAccel);
-        SmartDashboard.putNumber(getName() + "/Arm Extension Max Vel", kSmartMaxVel);
-        SmartDashboard.putNumber(getName() + "/Arm Extension Closed Loop Error", 0);
     }
 
     public void smartDashboardUpdate() {
@@ -101,18 +82,6 @@ public class ArmExtensionSubsystem extends SubsystemBase {
         m_armExtensionMotorPidController.setD(SmartDashboard.getNumber(getName() + "/Arm Extension D", kArmExtensionD));
         m_armExtensionMotorPidController.setFF(SmartDashboard.getNumber(getName() + "/Arm Extension FF", kArmExtensionFF));
         m_armExtensionMotorPidController.setIZone(SmartDashboard.getNumber(getName() + "/Arm Extension Izone", kArmExtensionIzone));
-
-        if (SmartDashboard.getBoolean(getName() + "/Arm Extension Prof Const Enable", false))
-        {
-            var maxAccelExtension = SmartDashboard.getNumber(getName() + "/Arm Rotator Max Accel", kSmartMaxAccel);
-            var maxVelExtension = SmartDashboard.getNumber(getName() + "/Arm Rotator Max Vel", kSmartMaxVel);
-            m_armExtensionMotorPidController.setSmartMotionMaxAccel(maxAccelExtension, 0);
-            m_armExtensionMotorPidController.setSmartMotionMaxVelocity(maxVelExtension, 0);
-
-            // var error = SmartDashboard.getNumber(getName() + "/Arm Rotator Closed Loop Error", 0);
-            // TODO: enabled this for testing closed loop error
-            // m_armExtensionMotorPidController.setSmartMotionAllowedClosedLoopError(error, 0);
-        }
 
         SmartDashboard.putNumber(getName() + "/Arm Extension Velocity", m_extensionEncoder.getVelocity());
         SmartDashboard.putNumber(getName() + "/Arm Extension Position", m_extensionEncoder.getPosition());

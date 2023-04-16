@@ -4,7 +4,10 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.PneumaticHub;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -13,8 +16,12 @@ import edu.wpi.first.wpilibj.TimedRobot;
  * project.
  */
 public class Robot extends TimedRobot {
-  public final ArmRotationSubsystem m_armRotationSubsystem = new ArmRotationSubsystem();
-  public final ArmExtensionSubsystem m_armExtensionSubsystem = new ArmExtensionSubsystem();
+  private final ArmRotationSubsystem m_armRotationSubsystem = new ArmRotationSubsystem();
+  private final ArmExtensionSubsystem m_armExtensionSubsystem = new ArmExtensionSubsystem();
+  private final DigitalInput m_atTopSwitch = new DigitalInput(5);
+  private final DigitalInput m_atBottomSwitch = new DigitalInput(6);
+  private final PneumaticHub m_pneumatics = new PneumaticHub();
+  private final Timer m_delayTimer = new Timer();
 
   public enum FloatMovementStates {
     Unknown,
@@ -36,6 +43,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     // turn off compressor
+    m_pneumatics.disableCompressor();
   }
 
   /**
@@ -77,14 +85,14 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     // get start/stop from joystick buttons or dashboard
-    if (stop)
-    {
-      m_paradeMovement = false;
-    }
-    else if (startCompetition)
-    {
-      m_paradeMovement = true;
-    }
+    // if (stop)
+    // {
+    //   m_paradeMovement = false;
+    // }
+    // else if (startCompetition)
+    // {
+    //   m_paradeMovement = true;
+    // }
 
     if (m_paradeMovement)
     {
@@ -96,12 +104,48 @@ public class Robot extends TimedRobot {
   {
     switch (m_curretState)
     {
-      case FloatMovementStates.StartLowering:
+      case StartLowering:
         // start arm and extension movement
+        m_armExtensionSubsystem.setArmExtensionPosition(0);
+        m_armRotationSubsystem.setArmDegrees(60);
         // start apple movement
         m_curretState = FloatMovementStates.WaitForDownSwitch;
-      break;
-// add other cases
+        break;
+      case WaitForDownSwitch:
+        if (m_atBottomSwitch.get())
+        {
+          m_curretState = FloatMovementStates.DelayAtDownSwitch;
+          m_delayTimer.reset();
+          m_delayTimer.start();
+        }
+        break;
+      case DelayAtDownSwitch:
+        if (m_delayTimer.hasElapsed(2))
+        {
+          m_curretState = FloatMovementStates.StartRaising;
+        }
+        break;
+      case StartRaising:
+        m_armExtensionSubsystem.setArmExtensionPosition(150);
+        m_armRotationSubsystem.setArmDegrees(25);
+        m_curretState = FloatMovementStates.WaitForUpSwitch;
+        break;
+      case WaitForUpSwitch:
+        if (m_atTopSwitch.get())
+        {
+          m_curretState = FloatMovementStates.DelayAtTopSwitch;
+          m_delayTimer.reset();
+          m_delayTimer.start();
+        }
+        break;
+      case DelayAtTopSwitch:
+        if (m_delayTimer.hasElapsed(2))
+        {
+          m_curretState = FloatMovementStates.StartLowering;
+        }
+        break;
+      default:
+        break;
     }
   }
 
