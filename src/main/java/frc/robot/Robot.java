@@ -24,8 +24,8 @@ public class Robot extends TimedRobot {
   private final ArmRotationSubsystem m_armRotationSubsystem = new ArmRotationSubsystem();
   private final ArmExtensionSubsystem m_armExtensionSubsystem = new ArmExtensionSubsystem();
   private final CANSparkMax m_appleMotor = new CANSparkMax(9, MotorType.kBrushless);
-  private final DigitalInput m_atTopSwitch = new DigitalInput(5);
-  private final DigitalInput m_atBottomSwitch = new DigitalInput(6);
+  private final DigitalInput m_atTopSwitch = new DigitalInput(9);  // was 5
+  private final DigitalInput m_atBottomSwitch = new DigitalInput(7);  // was 6
   private final PneumaticHub m_pneumatics = new PneumaticHub();
   private final Timer m_delayTimer = new Timer();
 
@@ -41,7 +41,7 @@ public class Robot extends TimedRobot {
 
   private FloatMovementStates m_curretState = FloatMovementStates.Unknown;
   private boolean m_paradeMovement = false;
-  private double m_appleSpeed = 0.5;
+  private double m_appleSpeed = 0.2;
   private double m_pickAppleRotation = 150;
   private double m_pickAppleExtension = 25;
   private double m_deliverAppleRotation = 60;
@@ -60,7 +60,7 @@ public class Robot extends TimedRobot {
     m_appleMotor.restoreFactoryDefaults();
     m_appleMotor.setIdleMode(IdleMode.kBrake);
 
-    SmartDashboard.putNumber("Apple Speed", 0.5);
+    SmartDashboard.putNumber("Apple Speed", 0.2);
     SmartDashboard.putNumber("Pick Apple Rotation", 150);
     SmartDashboard.putNumber("Pick Apple Extension", 25);
     SmartDashboard.putNumber("Deliver Apple Rotation", 60);
@@ -97,7 +97,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    var runProgram = SmartDashboard.putBoolean("Run Float Program", false);
+    var runProgram = SmartDashboard.getBoolean("Run Float Program", false);
     // get start/stop from joystick buttons or dashboard
     if (runProgram == false)
     {
@@ -136,7 +136,7 @@ public class Robot extends TimedRobot {
         m_curretState = FloatMovementStates.WaitForDownSwitch;
         break;
       case WaitForDownSwitch:
-        if (m_atBottomSwitch.get())
+        if (!m_atTopSwitch.get())   //(m_atBottomSwitch.get()) for testing - we only have top switch
         {
           m_appleMotor.set(0);
           m_curretState = FloatMovementStates.DelayAtDownSwitch;
@@ -157,7 +157,7 @@ public class Robot extends TimedRobot {
         m_curretState = FloatMovementStates.WaitForUpSwitch;
         break;
       case WaitForUpSwitch:
-        if (m_atTopSwitch.get())
+        if (!m_atTopSwitch.get())
         {
           m_appleMotor.set(0);
           m_curretState = FloatMovementStates.DelayAtTopSwitch;

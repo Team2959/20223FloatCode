@@ -33,11 +33,12 @@ public class ArmRotationSubsystem extends SubsystemBase {
       kArmRotatorI, kArmRotatorD,
       new Constraints(kArmRotatorMaxVelocity, kArmRotatorMaxAccel));
 
-  private SparkMaxRelativeEncoder m_armRotatorEncoder = (SparkMaxRelativeEncoder) m_armRotatorMotor.getEncoder();
+  private SparkMaxRelativeEncoder m_armRotatorEncoder;
 
   public ArmRotationSubsystem() {
     m_armRotatorMotor.setIdleMode(IdleMode.kBrake);
     // m_armRotatorMotor.setIdleMode(IdleMode.kCoast);
+    m_armRotatorEncoder = (SparkMaxRelativeEncoder) m_armRotatorMotor.getEncoder();
 
     setArmDegrees(kArmHomePosition);
   }
