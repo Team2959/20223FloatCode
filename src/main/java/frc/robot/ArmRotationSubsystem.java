@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ArmRotationSubsystem extends SubsystemBase {
+
+
   public static final double kArmHomePosition = 60;
   private static final double kArmRotatorP = 0.02;
   private static final double kArmRotatorI = 0.00002;
@@ -24,6 +26,7 @@ public class ArmRotationSubsystem extends SubsystemBase {
   private static final double kArmRotatorMaxVelocity = 500; // degrees per second
   private static final double kArmRotatorMaxAccel = 500; // degrees per second per second
   private double m_lastArmRotationTarget = kArmHomePosition;
+
 
   private CANSparkMax m_armRotatorMotor = new CANSparkMax(7, MotorType.kBrushless);
   private DigitalInput m_armRotatorEncoderDigitalInput = new DigitalInput(8);
@@ -34,6 +37,7 @@ public class ArmRotationSubsystem extends SubsystemBase {
       new Constraints(kArmRotatorMaxVelocity, kArmRotatorMaxAccel));
 
   private SparkMaxRelativeEncoder m_armRotatorEncoder;
+
 
   public ArmRotationSubsystem() {
     m_armRotatorMotor.setIdleMode(IdleMode.kBrake);

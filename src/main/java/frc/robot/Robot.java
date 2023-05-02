@@ -14,6 +14,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -34,19 +37,24 @@ public class Robot extends TimedRobot {
     StartLowering,
     WaitForDownSwitch,
     DelayAtDownSwitch,
-    StartRaising,
+    StartRaisingApple,
     WaitForUpSwitch,
-    DelayAtTopSwitch
+    DelayAtTopSwitch,
+    DelayForRotate,
+    DelayForExtend
   };
 
   private FloatMovementStates m_curretState = FloatMovementStates.Unknown;
   private boolean m_paradeMovement = false;
-  private double m_appleSpeed = 0.2;
+  private double m_applePickSpeed = -0.75;
+  private double m_appleResetSpeed = 0.1; 
   private double m_pickAppleRotation = 150;
   private double m_pickAppleExtension = 25;
   private double m_deliverAppleRotation = 60;
   private double m_deliverAppleExtension = 0;
-  private double m_afterSwitchesDelay = 2;
+  private double m_afterSwitchesDelay = 5;
+  private double m_afterArmRotate = 3;
+  private double m_afterArmExtend = 3;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -59,8 +67,9 @@ public class Robot extends TimedRobot {
 
     m_appleMotor.restoreFactoryDefaults();
     m_appleMotor.setIdleMode(IdleMode.kBrake);
+    m_armRotationSubsystem.setArmDegrees(60);
 
-    SmartDashboard.putNumber("Apple Speed", 0.2);
+    SmartDashboard.putNumber("Apple Speed", 0.75);
     SmartDashboard.putNumber("Pick Apple Rotation", 150);
     SmartDashboard.putNumber("Pick Apple Extension", 25);
     SmartDashboard.putNumber("Deliver Apple Rotation", 60);
@@ -113,13 +122,15 @@ public class Robot extends TimedRobot {
     else if (m_paradeMovement == false)
     {
       m_paradeMovement = true;
-      m_curretState = FloatMovementStates.StartRaising;
+      m_curretState = FloatMovementStates.StartRaisingApple;
     }
 
     if (m_paradeMovement)
     {
       NextMovemementState();
     }
+    CommandScheduler.getInstance().run();
+
   }
 
   private void NextMovemementState()
@@ -129,16 +140,17 @@ public class Robot extends TimedRobot {
     {
       case StartLowering:
         // start arm and extension movement
-        m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
+//        m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
         m_armRotationSubsystem.setArmDegrees(m_deliverAppleRotation);
         // start apple movement
-        m_appleMotor.set(-m_appleSpeed);
+        m_appleMotor.set(m_applePickSpeed);
         m_curretState = FloatMovementStates.WaitForDownSwitch;
         break;
       case WaitForDownSwitch:
         if (!m_atTopSwitch.get())   //(m_atBottomSwitch.get()) for testing - we only have top switch
         {
           m_appleMotor.set(0);
+          m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
           m_curretState = FloatMovementStates.DelayAtDownSwitch;
           m_delayTimer.reset();
           m_delayTimer.start();
@@ -147,13 +159,13 @@ public class Robot extends TimedRobot {
       case DelayAtDownSwitch:
         if (m_delayTimer.hasElapsed(m_afterSwitchesDelay))
         {
-          m_curretState = FloatMovementStates.StartRaising;
+          m_curretState = FloatMovementStates.StartRaisingApple;
         }
         break;
-      case StartRaising:
-        m_armRotationSubsystem.setArmDegrees(m_pickAppleRotation);
-        m_armExtensionSubsystem.setArmExtensionPosition(m_pickAppleExtension);
-        m_appleMotor.set(m_appleSpeed);
+      case StartRaisingApple:
+       // m_armRotationSubsystem.setArmDegrees(m_pickAppleRotation);
+       // m_armExtensionSubsystem.setArmExtensionPosition(m_pickAppleExtension);
+        m_appleMotor.set(m_appleResetSpeed);
         m_curretState = FloatMovementStates.WaitForUpSwitch;
         break;
       case WaitForUpSwitch:
@@ -168,10 +180,28 @@ public class Robot extends TimedRobot {
       case DelayAtTopSwitch:
         if (m_delayTimer.hasElapsed(m_afterSwitchesDelay))
         {
+          m_curretState = FloatMovementStates.DelayForRotate;
+          m_delayTimer.reset();
+          m_delayTimer.start();
+          m_armRotationSubsystem.setArmDegrees(m_pickAppleRotation);
+        }
+        break;
+      case DelayForRotate:
+        if (m_delayTimer.hasElapsed(m_afterArmRotate))
+        {
+          m_armExtensionSubsystem.setArmExtensionPosition(m_pickAppleExtension);
+          m_curretState = FloatMovementStates.DelayForExtend;
+          m_delayTimer.reset();
+          m_delayTimer.start();
+        }
+        break;
+      case DelayForExtend:
+        if (m_delayTimer.hasElapsed(m_afterArmExtend))
+        {
           m_curretState = FloatMovementStates.StartLowering;
         }
         break;
-      default:
+    default:
         break;
     }
   }
@@ -183,7 +213,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically when disabled. */
   @Override
   public void disabledPeriodic() {
-    m_appleSpeed = SmartDashboard.getNumber("Apple Speed", 0.5);
+    m_applePickSpeed = SmartDashboard.getNumber("Apple Speed", 0.75);
     m_pickAppleRotation = SmartDashboard.getNumber("Pick Apple Rotation", 150);
     m_pickAppleExtension = SmartDashboard.getNumber("Pick Apple Extension", 25);
     m_deliverAppleRotation = SmartDashboard.getNumber("Deliver Apple Rotation", 60);
