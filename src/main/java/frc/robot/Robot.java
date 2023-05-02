@@ -67,7 +67,6 @@ public class Robot extends TimedRobot {
 
     m_appleMotor.restoreFactoryDefaults();
     m_appleMotor.setIdleMode(IdleMode.kBrake);
-    m_armRotationSubsystem.setArmDegrees(60);
 
     SmartDashboard.putNumber("Apple Speed", 0.75);
     SmartDashboard.putNumber("Pick Apple Rotation", 150);
@@ -101,6 +100,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     m_paradeMovement = false;
+    m_armRotationSubsystem.stopArmRotatorMotor();
   }
 
   /** This function is called periodically during operator control. */
@@ -129,8 +129,8 @@ public class Robot extends TimedRobot {
     {
       NextMovemementState();
     }
-    CommandScheduler.getInstance().run();
 
+    m_armRotationSubsystem.periodic();
   }
 
   private void NextMovemementState()

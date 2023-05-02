@@ -17,9 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ArmRotationSubsystem extends SubsystemBase {
-
-
-  public static final double kArmHomePosition = 60;
+  private static final double kArmHomePosition = 60;
   private static final double kArmRotatorP = 0.02;
   private static final double kArmRotatorI = 0.00002;
   private static final double kArmRotatorD = 0;
@@ -27,13 +25,12 @@ public class ArmRotationSubsystem extends SubsystemBase {
   private static final double kArmRotatorMaxAccel = 500; // degrees per second per second
   private double m_lastArmRotationTarget = kArmHomePosition;
 
-
   private CANSparkMax m_armRotatorMotor = new CANSparkMax(7, MotorType.kBrushless);
   private DigitalInput m_armRotatorEncoderDigitalInput = new DigitalInput(8);
   private DutyCycle m_armRotatorEncoderDutyCycle = new DutyCycle(m_armRotatorEncoderDigitalInput);
 
-  private ProfiledPIDController m_armRotatorMotorProfiledPidController = new ProfiledPIDController(kArmRotatorP,
-      kArmRotatorI, kArmRotatorD,
+  private ProfiledPIDController m_armRotatorMotorProfiledPidController = new ProfiledPIDController(
+      kArmRotatorP, kArmRotatorI, kArmRotatorD,
       new Constraints(kArmRotatorMaxVelocity, kArmRotatorMaxAccel));
 
   private SparkMaxRelativeEncoder m_armRotatorEncoder;
