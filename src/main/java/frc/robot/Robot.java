@@ -43,8 +43,8 @@ public class Robot extends TimedRobot {
 
   private FloatMovementStates m_curretState = FloatMovementStates.Unknown;
   private boolean m_paradeMovement = false;
-  private double m_applePickSpeed = -0.75;
-  private double m_appleResetSpeed = 0.1; 
+  private double m_applePickSpeed = 0.75;
+  private double m_appleResetSpeed = 0.30; 
   private double m_pickAppleRotation = 150;
   private double m_pickAppleExtension = 25;
   private double m_deliverAppleRotation = 60;
@@ -140,11 +140,11 @@ public class Robot extends TimedRobot {
 //        m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
         m_armRotationSubsystem.setArmDegrees(m_deliverAppleRotation);
         // start apple movement
-        m_appleMotor.set(m_applePickSpeed);
+        m_appleMotor.set(-m_applePickSpeed);
         m_curretState = FloatMovementStates.WaitForDownSwitch;
         break;
       case WaitForDownSwitch:
-        if (!m_atTopSwitch.get())   //(m_atBottomSwitch.get()) for testing - we only have top switch
+        if (!m_atBottomSwitch.get())   //(m_atBottomSwitch.get()) for testing - we only have top switch
         {
           m_appleMotor.set(0);
           m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
