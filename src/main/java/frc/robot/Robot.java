@@ -136,14 +136,21 @@ public class Robot extends TimedRobot {
     switch (m_curretState)
     {
       case StartLowering:
-        // start arm and extension movement
-//        m_armExtensionSubsystem.setArmExtensionPosition(m_deliverAppleExtension);
         m_armRotationSubsystem.setArmDegrees(m_deliverAppleRotation);
         // start apple movement
         m_appleMotor.set(-m_applePickSpeed);
         m_curretState = FloatMovementStates.WaitForDownSwitch;
+        m_delayTimer.reset();
+        m_delayTimer.start();  
         break;
       case WaitForDownSwitch:
+        if (m_delayTimer.hasElapsed(2.0))
+        {
+          // if low sensor isn't satisfied in 2 seconds exit parade mode
+          SmartDashboard.putBoolean("Run Float Program", false);
+          m_appleMotor.set(0);
+        }
+
         if (!m_atBottomSwitch.get())   //(m_atBottomSwitch.get()) for testing - we only have top switch
         {
           m_appleMotor.set(0);
@@ -164,8 +171,16 @@ public class Robot extends TimedRobot {
        // m_armExtensionSubsystem.setArmExtensionPosition(m_pickAppleExtension);
         m_appleMotor.set(m_appleResetSpeed);
         m_curretState = FloatMovementStates.WaitForUpSwitch;
+        m_delayTimer.reset();
+        m_delayTimer.start();  
         break;
       case WaitForUpSwitch:
+        if (m_delayTimer.hasElapsed(4.0))
+        {
+          // if low sensor isn't satisfied in 4 seconds exit parade mode
+          SmartDashboard.putBoolean("Run Float Program", false);
+          m_appleMotor.set(0);
+        }
         if (!m_atTopSwitch.get())
         {
           m_appleMotor.set(0);
